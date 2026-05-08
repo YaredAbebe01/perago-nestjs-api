@@ -5,7 +5,7 @@ execute  'install npm ' then
 all the required dependence will be installed.
 create a database named 'orga_structure'
 execute 'nest start'. 
-access and test your api via swagger 
+access and test your api via   
 http://localhost:3000/api
 
 <h1> Requirements </h1>
