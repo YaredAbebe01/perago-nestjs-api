@@ -13,6 +13,7 @@ export type PositionTreeNode = {
   id: string;
   name: string;
   description: string;
+  email: string | null;
   parentId: string | null;
   children: PositionTreeNode[];
 };
@@ -32,6 +33,7 @@ export class PositionsService {
     const position = this.positionsRepo.create({
       name: payload.name.trim(),
       description: payload.description.trim(),
+      email: payload.email ?? null,
       parentId: payload.parentId ?? null,
     });
 
@@ -58,6 +60,10 @@ export class PositionsService {
 
     if (payload.description !== undefined) {
       position.description = payload.description.trim();
+    }
+
+    if (payload.email !== undefined) {
+      position.email = payload.email;
     }
 
     return this.positionsRepo.save(position);
@@ -148,6 +154,7 @@ export class PositionsService {
         id: position.id,
         name: position.name,
         description: position.description,
+        email: position.email,
         parentId: position.parentId,
         children: [],
       });

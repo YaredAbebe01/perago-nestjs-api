@@ -20,6 +20,9 @@ export class PositionEntity {
   @Column({ length: 500 })
   description: string;
 
+  @Column({ length: 255, nullable: true })
+  email: string | null;
+
   @Column({ type: 'uuid', nullable: true })
   parentId: string | null;
 

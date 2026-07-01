@@ -3,10 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './entities/user.entity';
-import { PhotoEntity } from './entities/photo.entity';
-import { PositionEntity } from './entities/position.entity';
 import { PositionsModule } from './positions/positions.module';
+import { createTypeOrmOptions } from './database/typeorm-options';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -16,15 +15,11 @@ import { PositionsModule } from './positions/positions.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [UserEntity, PhotoEntity, PositionEntity],
-        synchronize: true,
-        ssl: { rejectUnauthorized: false },
-      }),
+      useFactory: (configService: ConfigService) =>
+        createTypeOrmOptions(configService.get<string>('DATABASE_URL')),
     }),
     PositionsModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
