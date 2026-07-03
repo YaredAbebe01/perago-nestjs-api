@@ -41,4 +41,5 @@ export class PositionEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+  
 }

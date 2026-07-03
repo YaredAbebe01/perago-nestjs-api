@@ -3,11 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PositionEntity } from '../entities/position.entity';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
+import {
+  PositionEventsPublisherService,
+} from '../notifications/position-events.publisher';
+import {
+  PositionChangeEventType,
+  PositionSnapshot,
+} from '../notifications/position-events.types';
 
 export type PositionTreeNode = {
   id: string;
@@ -23,6 +31,7 @@ export class PositionsService {
   constructor(
     @InjectRepository(PositionEntity)
     private readonly positionsRepo: Repository<PositionEntity>,
+    private readonly positionEventsPublisher: PositionEventsPublisherService,
   ) {}
 
   async create(payload: CreatePositionDto): Promise<PositionEntity> {
@@ -37,11 +46,15 @@ export class PositionsService {
       parentId: payload.parentId ?? null,
     });
 
-    return this.positionsRepo.save(position);
+    const savedPosition = await this.positionsRepo.save(position);
+    await this.publishChangeEvent('position.created', this.snapshot(savedPosition));
+
+    return savedPosition;
   }
 
   async update(id: string, payload: UpdatePositionDto): Promise<PositionEntity> {
     const position = await this.ensureExists(id);
+    const beforeUpdate = this.snapshot(position);
 
     if (payload.parentId !== undefined) {
       if (payload.parentId === id) {
@@ -66,7 +79,14 @@ export class PositionsService {
       position.email = payload.email;
     }
 
-    return this.positionsRepo.save(position);
+    const savedPosition = await this.positionsRepo.save(position);
+    await this.publishChangeEvent(
+      'position.updated',
+      this.snapshot(savedPosition),
+      beforeUpdate,
+    );
+
+    return savedPosition;
   }
 
   async findAll(options: {
@@ -113,6 +133,7 @@ export class PositionsService {
 
   async remove(id: string): Promise<void> {
     const position = await this.ensureExists(id);
+    const deletedSnapshot = this.snapshot(position);
     const childrenCount = await this.positionsRepo.count({
       where: { parentId: id },
     });
@@ -122,6 +143,11 @@ export class PositionsService {
     }
 
     await this.positionsRepo.remove(position);
+    await this.publishChangeEvent(
+      'position.deleted',
+      deletedSnapshot,
+      deletedSnapshot,
+    );
   }
 
   private async ensureExists(id: string): Promise<PositionEntity> {
@@ -193,5 +219,37 @@ export class PositionsService {
       }
     }
     return null;
+  }
+
+  private snapshot(position: PositionEntity): PositionSnapshot {
+    return {
+      id: position.id,
+      name: position.name,
+      description: position.description,
+      email: position.email,
+      parentId: position.parentId,
+    };
+  }
+
+  private async publishChangeEvent(
+    eventType: PositionChangeEventType,
+    position: PositionSnapshot,
+    before?: PositionSnapshot,
+  ): Promise<void> {
+    await this.positionEventsPublisher.publish({
+      eventId: randomUUID(),
+      eventType,
+      entityType: 'position',
+      occurredAt: new Date().toISOString(),
+      positionId: position.id,
+      positionName: position.name,
+      position,
+      changes: before
+        ? {
+            before,
+            after: position,
+          }
+        : undefined,
+    });
   }
 }

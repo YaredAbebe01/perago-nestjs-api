@@ -7,7 +7,7 @@ export class SetCeoEmail1719856800000 implements MigrationInterface {
     await queryRunner.query(`
       UPDATE "positions"
       SET "email" = 'yaredabebe@gmail.com'
-      WHERE "id" = 'dc013880-6412-48ca-b6c8-0040f96bef49'
+      WHERE "id" = '8b3a4fe0-c656-4319-8ab9-cabd77d9e4b4'
     `);
   }
 
@@ -15,7 +15,7 @@ export class SetCeoEmail1719856800000 implements MigrationInterface {
     await queryRunner.query(`
       UPDATE "positions"
       SET "email" = NULL
-      WHERE "id" = 'dc013880-6412-48ca-b6c8-0040f96bef49'
+      WHERE "id" = '8b3a4fe0-c656-4319-8ab9-cabd77d9e4b4'
     `);
   }
 }
